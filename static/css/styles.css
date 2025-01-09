@@ -1,0 +1,161 @@
+/* Global Styles */
+/* General settings for the body to provide consistent appearance */
+body {
+    background-color: #f7f8fa;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans",
+                 "Helvetica Neue", sans-serif;
+    color: #333;
+    line-height: 1.6; 
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased; 
+    /* Smooth scrolling for anchor links */
+    scroll-behavior: smooth;
+}
+
+/* Simple fade-in animation for elements with .fade-in class */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-in {
+  animation: fadeIn 0.8s ease-in;
+}
+
+/* Styling for elements displaying QR code URLs */
+.qr-url {
+    overflow-wrap: break-word;
+    white-space: pre-wrap;
+    -webkit-hyphens: auto; /* Safari-specific hyphenation */
+    hyphens: auto;
+}
+
+/* Card Containers */
+.card-centered { 
+    margin: 20px auto;
+}
+
+.card-wider {
+    max-width: 650px;
+    padding: 15px;
+    background-color: #fff;
+    border-radius: 8px;
+    /* Subtle shadow for a modern look */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+    /* Optional fade-in effect for the card */
+    animation: fadeIn 0.6s ease-in;
+}
+
+/* Ensure paragraphs break long words for compatibility */
+.card p, .qr-url p {
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+/* Flexbox container for buttons */
+/* Provides layout and alignment for buttons */
+.button-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+/* General button styling */
+.button-container .btn {
+    flex: 1 1 auto;
+    max-width: 150px;
+    min-width: 80px;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    -webkit-transition: background-color 0.3s ease, transform 0.2s ease;
+    cursor: pointer;
+    border: none;
+    border-radius: 4px;
+    color: #fff;
+    /* Add extra padding for a more modern look */
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+}
+
+/* Basic hover effect for all .btn elements */
+.button-container .btn:hover,
+.button-container .btn:focus {
+    transform: scale(1.05);
+}
+
+/* Button: Download (gray) */
+.button-download {
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+.button-download:hover {
+    background-color: #5a6268;
+}
+
+/* Facebook button with hover/active states */
+.button-facebook {
+    background-color: #3b5998;
+}
+
+.button-facebook:hover,
+.button-facebook:focus {
+    background-color: #1877f2;
+}
+
+/* Instagram button with hover/active states */
+.button-instagram {
+    background-color: #f77737;
+}
+
+.button-instagram:hover,
+.button-instagram:focus {
+    background-color: #e1306c;
+}
+
+/* Twitter button with hover/active states */
+.button-twitter {
+    background-color: hsl(0, 0%, 13%);
+    color: #ffffff;
+}
+
+.button-twitter:hover,
+.button-twitter:focus {
+    background-color: #000000;
+}
+
+/* Styling for text inside list group items */
+.list-group-item .flex-content div {
+    word-wrap: break-word;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+    -webkit-hyphens: auto;
+}
+
+/* Responsive adjustments for smaller screens (max-width 340px) */
+@media (max-width: 340px) {
+    .list-group-item {
+        padding: 10px;
+    }
+
+    .list-group-item .flex-content div {
+        font-size: 14px;
+    }
+
+    .list-group-item .button-container {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .list-group-item .button-container .btn {
+        width: 100%;
+    }
+
+    .list-group-item img {
+        margin-bottom: 10px;
+    }
+}

@@ -1,0 +1,237 @@
+{% extends "layout.html" %}
+{% block title %}Sign Up{% endblock %}
+{% block content %}
+<!-- White card container with subtle shadow and rounded corners -->
+<div class="card card-centered card-wider" style="
+  background: #fff;
+  color: #2b2b2b;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  border: none;
+">
+  <div class="card-body">
+    <style>
+      .card-title {
+        color: #2b2b2b;
+      }
+
+      .form-control {
+        background-color: #fff;
+        border: 1px solid #ccc;
+        color: #2b2b2b;
+        transition: border-color 0.3s, box-shadow 0.3s;
+      }
+      .form-control:focus {
+        border-color: #000;
+        box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+      }
+
+      .btn-outline-secondary {
+        border-color: #444;
+        color: #444;
+        transition: all 0.3s ease;
+      }
+      .btn-outline-secondary:hover {
+        background-color: #444;
+        color: #fff;
+      }
+
+      .modern-signup-btn {
+        background: linear-gradient(to right, #444, #000);
+        border: none;
+        color: #fff;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        border-radius: 30px;
+        padding: 0.75rem 1.5rem;
+        width: 100%;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      }
+      .modern-signup-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+      }
+      .modern-signup-btn:disabled {
+        background: #d7d7d7;
+        color: #888;
+        cursor: not-allowed;
+      }
+
+      a {
+        color: #444;
+      }
+      a:hover {
+        color: #000;
+        text-decoration: none;
+      }
+    </style>
+
+    <h5 class="card-title text-center mb-4">Sign Up</h5>
+
+    {% if error %}
+      <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('signup') }}" id="signup-form">
+      <div class="mb-3">
+        <label>Email</label>
+        <input type="email" name="email" class="form-control" required />
+      </div>
+
+      <div class="mb-3">
+        <label>Password</label>
+        <div class="input-group">
+          <input 
+            type="password" 
+            name="password" 
+            id="password" 
+            class="form-control" 
+            required 
+          />
+          <button 
+            type="button" 
+            id="toggle-password" 
+            class="btn btn-outline-secondary"
+          >
+            Show
+          </button>
+        </div>
+        <small class="form-text text-muted">
+          Password should contain at least 10 characters, numbers, and special characters.
+        </small>
+      </div>
+
+      <div class="mb-3">
+        <label>Confirm Password</label>
+        <input 
+          type="password" 
+          name="password_confirm" 
+          id="password-confirm" 
+          class="form-control" 
+          required 
+        />
+      </div>
+
+      <div class="form-check mb-3">
+        <input
+          class="form-check-input"
+          type="checkbox"
+          id="terms-checkbox"
+          required
+        />
+        <label class="form-check-label" for="terms-checkbox">
+          I accept the 
+          <a 
+            href="{{ url_for('static', filename='terms.html') }}" 
+            target="_blank"
+          >
+            Terms and Conditions
+          </a>
+        </label>
+        <span class="text-danger">*</span>        
+      </div>
+
+      <button
+        class="modern-signup-btn"
+        type="submit"
+        id="signup-button"
+        disabled
+      >
+        Sign Up
+      </button>
+    </form>
+
+    <div class="mt-3 text-center">
+      <small>
+        Already have an account? <a href="{{ url_for('login') }}">Log in</a>
+      </small>
+    </div>
+    <div class="mt-3 text-center" id="visit-link-container">
+      <small>
+        <a href="https://projectjunction.onrender.com" target="_blank">
+          Visit without logging in
+        </a>
+      </small>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="passwordConfirmModal" tabindex="-1" aria-labelledby="passwordConfirmModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content" style="border-radius: 12px;">
+      <div class="modal-header">
+        <h5 class="modal-title" id="passwordConfirmModalLabel">Password Warning</h5>
+        <button 
+          type="button" 
+          class="btn-close" 
+          data-bs-dismiss="modal" 
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        Your password isn't secure enough. Are you sure you want to proceed?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Cancel
+        </button>
+        <button type="button" class="btn btn-danger" id="confirm-weak-password">
+          Yes, proceed
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.getElementById("signup-form").addEventListener("submit", function (e) {
+    const password = document.getElementById("password").value;
+    const passwordConfirm = document.getElementById("password-confirm").value;
+    const passwordRegex = /^(?=.*\d)(?=.*[a-zA-Z])(?=.*[^\w\s])[A-Za-z\d@$!%*?&]{10,}$/; 
+
+    const submitButton = document.querySelector("#signup-form button[type='submit']");
+
+    if (!passwordRegex.test(password)) {
+      e.preventDefault(); // Prevent form submission if the password doesn't meet the requirements
+
+      const modal = new bootstrap.Modal(document.getElementById("passwordConfirmModal"));
+      modal.show();
+
+      document.getElementById("confirm-weak-password").addEventListener("click", function () {
+        modal.hide();
+        document.getElementById("signup-form").submit(); 
+      });
+
+      return;
+    }
+
+    if (password !== passwordConfirm) {
+      alert("Passwords do not match.");
+      e.preventDefault(); // Prevent form submission if passwords don't match
+      return;
+    }
+
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.innerHTML =
+        '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing, please wait...';
+    }
+  });
+
+  document.getElementById("terms-checkbox").addEventListener("change", function () {
+    const signupButton = document.getElementById("signup-button");
+    signupButton.disabled = !this.checked; // Enable the button if the checkbox is checked
+  });
+
+  // Toggle password visibility
+  document.getElementById("toggle-password").addEventListener("click", function () {
+    const passwordInput = document.getElementById("password");
+    const confirmPasswordInput = document.getElementById("password-confirm");
+    const isPassword = passwordInput.type === "password";
+    passwordInput.type = isPassword ? "text" : "password";
+    confirmPasswordInput.type = isPassword ? "text" : "password";
+    this.textContent = isPassword ? "Hide" : "Show";
+  });
+</script>
+{% endblock %}

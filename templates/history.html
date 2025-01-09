@@ -1,0 +1,365 @@
+{% extends "layout.html" %}
+{% block title %}History | QR Code Generator{% endblock %}
+{% block content %}
+<div class="card card-centered card-wider" style="
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  border: none;
+">
+  <div class="card-body">
+  
+    <style>
+      .nav-tabs {
+        border-bottom: none; /* remove default Bootstrap border */
+        margin-bottom: 1rem;
+      }
+      .nav-tabs .nav-link {
+        border: none;
+        border-radius: 30px;
+        margin-right: 5px;
+        background: #f2f2f2;
+        color: #2b2b2b;
+        transition: all 0.3s ease;
+        padding: 0.5rem 1rem;
+      }
+      .nav-tabs .nav-link.active {
+        background: linear-gradient(to right, #636363, #1b1b1b);
+        color: #fff !important;
+      }
+      .nav-tabs .nav-link:hover {
+        background-color: #e6e6e6;
+      }
+
+      .list-group-item {
+        border-radius: 8px;
+        border: 1px solid #e3e3e3;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        transition: transform 0.2s ease, box-shadow 0.3s ease;
+      }
+      .list-group-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+      }
+
+      /* For copy/download/social share buttons */
+      .button-container .btn {
+        border-radius: 30px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        padding: 0.5rem 1rem;
+      }
+      .button-container .btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      }
+
+      .button-download {
+        background: linear-gradient(45deg, #6c757d, #50565a);
+        border: none;
+        color: #fff;
+      }
+      .button-download:hover {
+        background: linear-gradient(45deg, #50565a, #3c4144);
+      }
+
+      .btn-outline-secondary.btn-sm {
+        border-radius: 20px;
+        border-color: #2c2c2c;
+        color: #272727;
+        font-weight: 500;
+      }
+      .btn-outline-secondary.btn-sm:hover {
+        background-color: #1d1d1d;
+        color: #fff;
+      }
+
+      .btn-danger.btn-sm.delete-qr {
+        border-radius: 20px;
+      }
+      .btn-danger.btn-sm.delete-qr:hover {
+        transform: scale(1.03);
+      }
+
+      #delete-all-btn {
+        border-radius: 30px;
+        font-weight: 600;
+        background: linear-gradient(45deg, #dc3545, #b02a37);
+        border: none;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+      }
+      #delete-all-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 5px 10px rgba(176,42,55,0.3);
+      }
+
+    </style>
+
+    <ul class="nav nav-tabs">
+      <li class="nav-item">
+        <a class="nav-link" href="{{ url_for('generate_qr') }}">Generate</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link active" href="{{ url_for('history') }}">History</a>
+      </li>
+    </ul>
+    <h5 class="card-title text-center mb-4">QR Code History</h5>
+
+    {% if error %}
+      <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+    {% if success %}
+      <div class="alert alert-success">{{ success }}</div>
+    {% endif %}
+
+    {% if not qr_codes %}
+      <p class="text-muted">No older QR codes to display.</p>
+    {% else %}
+      <div class="list-group">
+        {% for record in qr_codes %}
+          <div class="list-group-item mb-2 d-flex flex-row align-items-start">
+            <div class="d-flex flex-column align-items-center" style="margin-right:10px;">
+              <img
+                src="data:image/png;base64,{{ record.qr_code }}"
+                alt="QR"
+                style="max-width:100px;"
+                class="border mb-2"
+              />
+              <div class="input-group">
+                <input
+                  type="text"
+                  class="form-control form-control-sm"
+                  id="copyLink{{ record.id }}"
+                  value="{{ record.url }}"
+                  readonly
+                />
+                <button
+                  class="btn btn-outline-secondary btn-sm"
+                  onclick="copyToClipboard('copyLink{{ record.id }}')"
+                >
+                  Copy
+                </button>
+              </div>
+            </div>
+
+            <div class="d-flex flex-column flex-grow-1">
+              <div style="overflow-wrap: anywhere;">{{ record.url }}</div>
+
+              <div class="button-container">
+                <a
+                  href="{{ url_for('download_qr', record_id=record.id) }}"
+                  class="btn button-download"
+                  >Download</a
+                >
+                <button
+                  class="btn button-twitter"
+                  onclick="shareOnTwitter('{{ record.url }}')"
+                >𝕏</button>
+                <button
+                  class="btn button-facebook"
+                  onclick="shareOnFacebook('{{ record.url }}')"
+                >Facebook</button>
+                <button
+                  class="btn button-instagram"
+                  data-bs-toggle="modal"
+                  data-bs-target="#instagramModal{{ record.id }}"
+                >Instagram</button>
+
+                <button
+                  class="btn btn-danger btn-sm delete-qr"
+                  data-record-id="{{ record.id }}"
+                  data-bs-toggle="modal"
+                  data-bs-target="#deleteModal{{ record.id }}"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Modal for Deleting Individual QR Code -->
+          <div
+            class="modal fade"
+            id="deleteModal{{ record.id }}"
+            tabindex="-1"
+            aria-labelledby="deleteModalLabel{{ record.id }}"
+            aria-hidden="true"
+          >
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="deleteModalLabel{{ record.id }}">
+                    Confirm Deletion
+                  </h5>
+                  <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Close"
+                  ></button>
+                </div>
+                <div class="modal-body">
+                  Are you sure you want to delete this QR code? This action is irreversible.
+                </div>
+                <div class="modal-footer">
+                  <button
+                    type="button"
+                    class="btn btn-secondary"
+                    data-bs-dismiss="modal"
+                    onclick="location.reload()"
+                  >
+                    Cancel
+                  </button>
+                  <form
+                    method="POST"
+                    action="{{ url_for('delete_qr_code', record_id=record.id) }}"
+                    style="display:inline;"
+                  >
+                    <button type="submit" class="btn btn-danger">
+                      Confirm Delete
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Modal for Instagram -->
+          <div
+            class="modal fade"
+            id="instagramModal{{ record.id }}"
+            tabindex="-1"
+            aria-labelledby="instagramModalLabel{{ record.id }}"
+            aria-hidden="true"
+          >
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="instagramModalLabel{{ record.id }}">
+                    Share on Instagram
+                  </h5>
+                  <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Close"
+                  ></button>
+                </div>
+                <div class="modal-body text-center">
+                  <img
+                    src="data:image/png;base64,{{ record.qr_code }}"
+                    alt="QR Code"
+                    class="img-fluid mb-3 border p-2"
+                  />
+                  <p>Copy this link and share it manually on Instagram:</p>
+                  <div class="input-group">
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="instagramLink{{ record.id }}"
+                      value="{{ record.url }}"
+                      readonly
+                    />
+                    <button
+                      class="btn btn-outline-secondary"
+                      onclick="copyToClipboard('instagramLink{{ record.id }}')"
+                    >
+                      Copy
+                    </button>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button
+                    type="button"
+                    class="btn btn-secondary"
+                    data-bs-dismiss="modal"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        {% endfor %}
+      </div> 
+    {% endif %}
+    
+    <form method="POST" action="{{ url_for('delete_all_qr_codes') }}" id="delete-all-form">
+      <div class="d-flex justify-content-end mt-3">
+        <button
+          type="submit"
+          class="btn btn-danger"
+          id="delete-all-btn"
+        >
+          Delete All QR Codes
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div
+  class="modal fade"
+  id="confirmationModal"
+  tabindex="-1"
+  aria-labelledby="confirmationModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="confirmationModalLabel">
+          Confirm Deletion
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        Are you sure you want to delete all QR codes? This action is irreversible.
+      </div>
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          data-bs-dismiss="modal"
+          onclick="location.reload()"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          class="btn btn-danger"
+          id="confirm-delete-all"
+        >
+          Confirm
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function shareOnTwitter(url) {
+    const text = encodeURIComponent(`Check out this QR code: ${url}`);
+    window.open(`https://twitter.com/intent/tweet?text=${text}`, "_blank");
+  }
+
+  function shareOnFacebook(url) {
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, "_blank");
+  }
+
+  function copyToClipboard(elementId) {
+    const input = document.getElementById(elementId);
+    input.select();
+    input.setSelectionRange(0, 99999); // For mobile devices
+    navigator.clipboard.writeText(input.value).then(() => {
+    }).catch(() => {
+      alert("Failed to copy link.");
+    });
+  }
+</script>  
+{% endblock %}

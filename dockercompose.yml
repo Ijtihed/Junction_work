@@ -1,0 +1,20 @@
+version: "3.8"
+
+services:
+  flask_app:
+    build:
+      context: ./flask_app
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    env_file:
+      - flask_app/.env
+    depends_on:
+      - pocketbase_service
+
+  pocketbase_service:
+    build:
+      context: ./pocketbase_service
+      dockerfile: Dockerfile
+    ports:
+      - "8090:8090"

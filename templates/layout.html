@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- Title -->
+    <title>{% block title %}Junction QR Code{% endblock %}</title>
+    
+    <!-- Meta Description -->
+    <meta
+      name="description"
+      content="Generate and save QR codes quickly and easily with the Junction Platform."
+    />
+    <!-- Author -->
+    <meta name="author" content="Ijtihed Kilani" />
+    <!-- Keywords -->
+    <meta name="keywords" content="QR code generator, QR codes, free QR generator" />
+    
+    <!-- Open Graph Metadata for Social Sharing -->
+    <meta property="og:title" content="Junction QR Code" />
+    <meta
+      property="og:description"
+      content="Easily generate QR codes for any URL, text, or image with the Junction Platform."
+    />
+    <meta
+      property="og:image"
+      content="{{ url_for('static', filename='images/junction_black.png') }}"
+    />
+    <meta property="og:url" content="{{ request.url }}" />
+    <meta property="og:type" content="website" />
+    
+    <!-- Twitter Card Metadata -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Junction QR Code" />
+    <meta
+      name="twitter:description"
+      content="Easily generate QR codes for any URL, text, or image with the Junction Platform."
+    />
+    <meta
+      name="twitter:image"
+      content="{{ url_for('static', filename='images/junction_black.png') }}"
+    />
+    
+    <!-- Favicon -->
+    <link
+      rel="icon"
+      href="{{ url_for('static', filename='images/junction_black.png') }}"
+      type="image/png"
+    />
+    
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/styles.css') }}"
+    />
+
+    <style>
+      body {
+        background-color: #fafafa;
+      }
+      .navbar {
+        box-shadow: 0 2px 4px rgba(43, 43, 43, 0.199);
+      }
+
+      .navbar-light .navbar-nav .nav-link {
+        border-radius: 0 !important;
+        color: #333 !important;
+      }
+      .navbar-light .navbar-nav .nav-link:hover {
+        color: #000 !important;
+      }
+
+      .dashboard-btn {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #fff;
+        background: linear-gradient(to right, #636363, #1b1b1b);
+        border: none;
+        border-radius: 20px;
+        padding: 10px 20px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+      }
+      .dashboard-btn:hover {
+        transform: translateY(-2px);
+        background: linear-gradient(to right, #505050, #101010);
+      }
+
+      /* Progress Indicator Styling */ 
+      #global-progress-indicator {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.8);
+        z-index: 1050;
+        justify-content: center;
+        align-items: center;
+      }
+    </style>
+  </head>
+
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+      <div class="container">
+        <!-- Updated logo link -->
+        <a
+          class="navbar-brand"
+          href="https://www.hackjunction.com/junction-platform"
+          target="_blank"
+        >
+          <img
+            src="{{ url_for('static', filename='images/company_logo.png') }}"
+            alt="Company Logo"
+            style="max-width: 100px; height: auto;"
+          />
+        </a>
+        <ul class="navbar-nav ms-auto">
+          {% if 'pb_token' in session and 'pb_user_id' in session %}
+            <li class="nav-item me-3 mt-2">
+              <small class="text-muted">
+                {{ session["pb_user_email"] }}
+              </small>
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link"
+                href="#"
+                id="logout-btn"
+                data-bs-toggle="modal"
+                data-bs-target="#logoutModal"
+                >Logout</a
+              >
+            </li>
+          {% else %}
+            <li class="nav-item">
+              {% if request.endpoint == 'login' %}
+                <a class="nav-link" href="{{ url_for('signup') }}"
+                  >Sign Up</a
+                >
+              {% else %}
+                <a class="nav-link" href="{{ url_for('login') }}"
+                  >Login</a
+                >
+              {% endif %}
+            </li>
+          {% endif %}
+
+          <li class="nav-item">
+            <a
+              class="nav-link"
+              href="https://www.hackjunction.com/junction-platform"
+              target="_blank"
+              >Junction Platform</a
+            >
+          </li>
+        </ul>
+      </div>
+    </nav>
+
+    <div class="container py-4">
+      {% block content %}{% endblock %}
+    </div>
+
+    <!-- Dashboard Button for Admins -->
+    {% if session['pb_user_role'] == 'admin' %}
+    <a href="{{ url_for('dashboard') }}" class="dashboard-btn">
+      Dashboard
+    </a>
+    {% endif %}
+
+    <!-- Global Progress Indicator -->
+    <div id="global-progress-indicator" class="text-center">
+      <div>
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2">Processing, please wait...</p>
+      </div>
+    </div>
+
+    <div
+      class="modal fade"
+      id="logoutModal"
+      tabindex="-1"
+      aria-labelledby="logoutModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content" style="border-radius: 10px;">
+          <div class="modal-header">
+            <h5 class="modal-title" id="logoutModalLabel">Confirm Logout</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            Are you sure you want to log out? Don't worry, your history will be
+            saved.
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <a href="{{ url_for('logout') }}" class="btn btn-danger"
+              >Logout</a
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bootstrap Bundle -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+    ></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+    <script>
+      // Show and hide the global progress indicator
+      function showGlobalProgress() {
+        const progressIndicator = document.getElementById("global-progress-indicator");
+        if (progressIndicator) {
+          progressIndicator.style.display = "flex";
+        }
+      }
+
+      function hideGlobalProgress() {
+        const progressIndicator = document.getElementById("global-progress-indicator");
+        if (progressIndicator) {
+          progressIndicator.style.display = "none";
+        }
+      }
+
+      // Show progress on form submissions globally
+      document.querySelectorAll("form").forEach((form) => {
+        form.addEventListener("submit", function () {
+          showGlobalProgress();
+        });
+      });
+    </script>
+  </body>
+</html>

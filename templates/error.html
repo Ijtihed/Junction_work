@@ -1,0 +1,14 @@
+{% extends "layout.html" %}
+{% block title %}{{ error_title }}{% endblock %}
+{% block content %}
+<div class="card card-centered card-wider">
+  <div class="card-body text-center">
+    <h5 class="card-title mb-4">{{ error_title }}</h5>
+    <p class="text-danger">{{ error_message }}</p>
+    <br/>
+    <a href="{{ url_for('generate_qr') }}" class="btn btn-secondary">
+      Return to Generate
+    </a>
+  </div>
+</div>
+{% endblock %}

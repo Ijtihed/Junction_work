@@ -1,0 +1,532 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="card card-centered card-wider" style="
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  border: none;
+">
+  <div class="card-body">
+
+    <!-- Modern Tab Styling -->
+    <style>
+      .nav-tabs {
+        border-bottom: none; /* remove default Bootstrap border */
+        margin-bottom: 1rem;
+      }
+      .nav-tabs .nav-link {
+        border: none;
+        border-radius: 30px;
+        margin-right: 5px;
+        background: #f2f2f2;
+        color: #2b2b2b;
+        transition: all 0.3s ease;
+        padding: 0.5rem 1rem;
+      }
+      .nav-tabs .nav-link.active {
+        background: linear-gradient(to right, #636363, #1b1b1b);
+        color: #fff !important;
+      }
+      .nav-tabs .nav-link:hover {
+        background-color: #e6e6e6;
+      }
+    </style>
+
+    <ul class="nav nav-tabs">
+      <li class="nav-item">
+        <a class="nav-link active" href="{{ url_for('generate_qr') }}">Generate</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="{{ url_for('history') }}">History</a>
+      </li>
+    </ul>
+
+    <h5 class="card-title text-center mb-4">QR Code Generator</h5>
+
+    {% if error %}
+      <div class="alert alert-danger">
+        {% if "validation_max_text_constraint" in error %}
+          Your QR code could not be saved because it exceeds the allowed size limit. Please try reducing the QR code size or content. You can still download it below, but it won't appear in your "History" tab.
+        {% else %}
+          {{ error }}
+        {% endif %}
+      </div>
+    {% endif %}
+
+    <!-- INLINE STYLE FOR BUTTONS AND FORM ELEMENTS -->
+    <style>
+      .modern-generate-btn {
+        background: linear-gradient(to right, #636363, #1b1b1b);
+        border: none;
+        color: #fff;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        border-radius: 30px;
+        padding: 0.75rem 1.5rem;
+        box-shadow: 0 4px 10px rgba(65, 65, 65, 0.2);
+      }
+      .modern-generate-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 15px rgba(27, 27, 27, 0.3);
+      }
+      .modern-generate-btn:disabled {
+        background: #d7d7d7;
+        color: #888;
+        cursor: not-allowed;
+      }
+
+      .modern-outline-btn {
+        border-radius: 30px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+      }
+      .modern-outline-btn:hover {
+        transform: scale(1.03);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      #reset-button {
+        background: #f2f2f2;
+        color: #2b2b2b;
+        border: 1px solid #ccc;
+      }
+      #reset-button:hover {
+        background: #e2e2e2;
+      }
+
+      .button-container .btn {
+        border-radius: 30px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        padding: 0.6rem 1rem;
+      }
+      .button-container .btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .button-download {
+        background: linear-gradient(45deg, #6c757d, #50565a);
+        border: none;
+      }
+      .button-download:hover {
+        background: linear-gradient(45deg, #50565a, #3c4144);
+      }
+
+      .btn-outline-secondary {
+        border-radius: 30px;
+        border-color: #141414;
+        color: #2b2b2b;
+      }
+      .btn-outline-secondary:hover {
+        background-color: #5f5f5f;
+        color: #fff;
+      }
+    </style>
+
+    <form id="qr-form" method="POST" action="{{ url_for('generate_qr') }}" enctype="multipart/form-data">
+      <div class="mb-3">
+        <label>Enter URL/Text: <span class="text-danger">*</span></label>
+        <input 
+          type="text" 
+          name="url" 
+          class="form-control" 
+          placeholder="https://example.com" 
+          value="{{ last_url or '' }}" 
+          required 
+        />
+      </div>
+
+      <div class="mb-3">
+        <label>Foreground Color</label>
+        <input
+          type="color"
+          name="fill_color"
+          class="form-control form-control-color"
+          value="{{ last_fill_color or '#000000' }}"
+        />
+      </div>
+      
+      <div class="mb-3">
+        <label>Background Color</label>
+        <input
+          type="color"
+          name="back_color"
+          class="form-control form-control-color"
+          value="{{ last_back_color or '#ffffff' }}"
+        />
+      </div>
+      
+      <div id="color-error" class="text-danger mt-2" style="display: none;"></div>
+      
+
+      <div class="mb-3">
+        <label>Size (1–10) <span class="text-danger">*</span></label>
+        <input 
+          type="range" 
+          name="logo_size" 
+          id="logo-size-range" 
+          class="form-range" 
+          min="20" 
+          max="30" 
+          value="{{ last_box_size or 25 }}" 
+          oninput="updateSizeLabel(this.value)" 
+        />
+        <span id="size-label" class="text-muted">
+        </span>
+      </div>
+
+      <div class="mb-3">
+        <label>Logo Options <span class="text-danger">*</span></label>
+        <select id="logo-option" class="form-select" name="logo_option" required>
+          <option 
+            value="junction_white" 
+            {% if last_logo_option|default('junction_white') == 'junction_white' %}selected{% endif %}
+          >
+            Junction White
+          </option>
+          <option 
+            value="junction_black" 
+            {% if last_logo_option == 'junction_black' %}selected{% endif %}
+          >
+            Junction Black
+          </option>
+          <option 
+            value="more" 
+            {% if last_logo_option == 'more' %}selected{% endif %}
+          >
+            More
+          </option>
+          <option 
+            value="none" 
+            {% if last_logo_option == 'none' %}selected{% endif %}
+          >
+            None
+          </option>
+        </select>        
+      </div>
+
+      <div 
+        id="upload-container" 
+        class="mb-3" 
+        style="display: {% if last_logo_option|default('') == 'more' %}block{% else %}none{% endif %};"
+      >
+        <label>Upload Logo: <span class="text-danger">*</span></label>
+        <label>(JPEG or PNG files only are compatible.)</label>
+        <input 
+          type="file" 
+          name="logo" 
+          id="logo-input" 
+          class="form-control" 
+          accept="image/*" 
+        />
+        <button type="button" id="remove-upload" class="btn modern-outline-btn mt-2">
+          Remove Upload
+        </button>
+        <div 
+          id="upload-error" 
+          class="text-danger mt-1" 
+          style="display: none;"
+        >
+          Field Required
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-between">
+        <button 
+          type="submit" 
+          id="generate-button" 
+          class="modern-generate-btn w-50 me-2"
+        >
+          Generate QR Code
+        </button>
+        <button 
+          type="button" 
+          id="reset-button" 
+          class="btn modern-outline-btn w-50"
+        >
+          Reset
+        </button>
+      </div>
+    </form>
+
+    {% if qr_url %}
+      <hr/>
+      <div class="text-center mb-3">
+        <strong>Generated Link:</strong>
+        <div class="input-group">
+          <input type="text" class="form-control" value="{{ qr_url }}" readonly>
+          <button class="btn btn-outline-secondary copy-link" data-url="{{ qr_url }}">Copy</button>
+        </div>
+      </div>
+
+      <div class="text-center">
+        <img 
+          src="data:image/png;base64,{{ qr_preview }}" 
+          alt="QR" 
+          class="border p-2" 
+          style="max-width:200px;" 
+        />
+        <br/><br/>
+
+        <div class="button-container">
+          <a 
+            href="data:image/png;base64,{{ qr_preview }}" 
+            download="qr_code.png" 
+            class="btn button-download"
+          >
+            Download
+          </a>
+          <button 
+            class="btn button-twitter" 
+            onclick="shareOnTwitter('{{ qr_url }}')"
+          >
+            𝕏
+          </button>
+          <button 
+            class="btn button-facebook" 
+            onclick="shareOnFacebook('{{ qr_url }}')"
+          >
+            Facebook
+          </button>
+          <button 
+            class="btn button-instagram" 
+            data-bs-toggle="modal" 
+            data-bs-target="#instagramModal"
+          >
+            Instagram
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal for Instagram -->
+      <div 
+        class="modal fade" 
+        id="instagramModal" 
+        tabindex="-1" 
+        aria-labelledby="instagramModalLabel" 
+        aria-hidden="true"
+      >
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="instagramModalLabel">Share on Instagram</h5>
+              <button 
+                type="button" 
+                class="btn-close" 
+                data-bs-dismiss="modal" 
+                aria-label="Close"
+              ></button>
+            </div>
+            <div class="modal-body">
+              Instagram doesn't support direct URL sharing. Copy this link to share manually:
+              <div class="input-group mt-2">
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  value="{{ qr_url }}" 
+                  readonly
+                >
+                <button 
+                  class="btn btn-outline-secondary copy-link" 
+                  data-url="{{ qr_url }}"
+                >
+                  Copy
+                </button>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button 
+                type="button" 
+                class="btn btn-secondary" 
+                data-bs-dismiss="modal"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% else %}
+      <p class="text-muted mt-3 text-center">
+        Generate QR codes and view your history.
+      </p>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+  // Utility Functions
+  function hexToRgb(hex) {
+    const bigint = parseInt(hex.slice(1), 16);
+    return [(bigint >> 16) & 255, (bigint >> 8) & 255, bigint & 255];
+  }
+
+  function calculateColorDistance(color1, color2) {
+    const [r1, g1, b1] = hexToRgb(color1);
+    const [r2, g2, b2] = hexToRgb(color2);
+    return Math.sqrt(
+      Math.pow(r1 - r2, 2) +
+      Math.pow(g1 - g2, 2) +
+      Math.pow(b1 - b2, 2)
+    );
+  }
+
+  // Validate Colors
+  function validateColors() {
+    const fillColor = document.querySelector('input[name="fill_color"]').value;
+    const backColor = document.querySelector('input[name="back_color"]').value;
+    const colorError = document.getElementById("color-error");
+    const generateButton = document.querySelector("#generate-button");
+
+    const colorDistance = calculateColorDistance(fillColor, backColor);
+    const threshold = 150;
+
+    if (colorDistance < threshold) {
+      colorError.style.display = "block";
+      colorError.textContent = "Foreground and background colors are too similar. Please choose more distinct colors.";
+      generateButton.disabled = true;
+      return false;
+    } else {
+      colorError.style.display = "none";
+      generateButton.disabled = false;
+      return true;
+    }
+  }
+
+  // Main Validation Function
+  function validateForm() {
+    const urlField = document.querySelector('input[name="url"]');
+    const logoOption = document.querySelector('select[name="logo_option"]');
+    const logoFile = document.querySelector('#logo-input');
+    const uploadError = document.querySelector('#upload-error');
+    const generateButton = document.querySelector("#generate-button");
+
+    const allowedExtensions = ['png', 'jpg', 'jpeg'];
+
+    let isValid = true;
+    uploadError.style.display = 'none';
+
+    if (!urlField.value.trim()) {
+      isValid = false;
+    }
+
+    if (logoOption.value === 'more') {
+      if (!logoFile.files.length) {
+        uploadError.textContent = "Please upload a logo file.";
+        uploadError.style.display = 'block';
+        isValid = false;
+      } else {
+        const fileName = logoFile.files[0].name;
+        const fileExtension = fileName.split('.').pop().toLowerCase();
+
+        if (!allowedExtensions.includes(fileExtension)) {
+          uploadError.textContent = `Invalid file type. Allowed types: ${allowedExtensions.join(', ')}`;
+          uploadError.style.display = 'block';
+          isValid = false;
+        }
+      }
+    }
+
+    generateButton.disabled = !isValid;
+    return isValid;
+  }
+
+  // Update Size Label
+  function updateSizeLabel(value) {
+    const displayValue = value - 20;
+    document.getElementById("size-label").textContent = `Display size: ${displayValue}`;
+  }
+
+  // Event Listeners
+  document.querySelector("#qr-form").addEventListener("submit", function (e) {
+    const generateButton = document.querySelector("#generate-button");
+    if (generateButton.disabled) {
+      e.preventDefault();
+      alert("Please fill in all required fields and fix any issues before generating the QR code.");
+      return;
+    }
+
+    const loadingIndicator = document.getElementById("global-progress-indicator");
+    if (loadingIndicator) {
+      loadingIndicator.style.display = "flex";
+    }
+
+    setTimeout(() => {
+      if (loadingIndicator && loadingIndicator.style.display === "flex") {
+        loadingIndicator.style.display = "none";
+        alert("The process is taking longer than expected. Please try again.");
+        window.location.reload();
+      }
+    }, 200000);
+  });
+
+  document.querySelector("#reset-button").addEventListener("click", function () {
+    window.location.href = window.location.href;
+  });
+
+  document.querySelector("#logo-option").addEventListener("change", function () {
+    const uploadContainer = document.querySelector("#upload-container");
+    const fillColorInput = document.querySelector('input[name="fill_color"]');
+    const backColorInput = document.querySelector('input[name="back_color"]');
+
+    switch (this.value) {
+      case "junction_black":
+        fillColorInput.value = "#ffffff";
+        backColorInput.value = "#000000";
+        uploadContainer.style.display = "none";
+        break;
+      case "junction_white":
+        fillColorInput.value = "#000000";
+        backColorInput.value = "#ffffff";
+        uploadContainer.style.display = "none";
+        break;
+      case "more":
+        uploadContainer.style.display = "block";
+        break;
+      default:
+        uploadContainer.style.display = "none";
+        fillColorInput.value = fillColorInput.defaultValue || "#000000";
+        backColorInput.value = backColorInput.defaultValue || "#ffffff";
+    }
+
+    validateForm();
+  });
+
+  document.querySelector("#remove-upload").addEventListener("click", function () {
+    document.querySelector("#logo-input").value = "";
+    validateForm();
+
+    let successMessage = document.getElementById("success-message");
+    if (!successMessage) {
+      successMessage = document.createElement("div");
+      successMessage.id = "success-message";
+      successMessage.className = "alert alert-success mt-3";
+      const form = document.querySelector("#qr-form");
+      form.parentNode.insertBefore(successMessage, form);
+    }
+    successMessage.textContent = "Upload removed!";
+    successMessage.style.display = "block";
+    setTimeout(() => {
+      successMessage.style.display = "none";
+    }, 3000);
+  });
+
+  document.querySelectorAll(".copy-link").forEach(button => {
+    button.addEventListener("click", function () {
+      const url = this.getAttribute("data-url");
+      navigator.clipboard.writeText(url).catch(() => {
+        alert("Failed to copy link!");
+      });
+    });
+  });
+
+  document.querySelector("input[name='url']").addEventListener("input", validateForm);
+  document.querySelector("#logo-input").addEventListener("change", validateForm);
+  document.querySelector("input[name='fill_color']").addEventListener("input", validateColors);
+  document.querySelector("input[name='back_color']").addEventListener("input", validateColors);
+
+  validateForm();
+  validateColors();
+</script>
+{% endblock %}
