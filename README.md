@@ -141,7 +141,7 @@ Follow these steps to set up the project locally.
 
 #### Using Docker
 
-1. Build and start services:
+1. Build and start services: (Very optional, everything above will work locally fine in all cases, for additional testing/deployment stuff)
    ```bash
    docker-compose up --build
    ```
