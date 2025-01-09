@@ -119,12 +119,14 @@ Follow these steps to set up the project locally.
      - `role` (Text, Defaults to "user")
    - Create a `qrcodes` collection with fields:
      - `url` (Text, Required)
-     - `qr_code` (Text, Required) (I recommend you increase max to 40,000)
+     - `qr_code` (Text, Required) (I recommend you increase max to 1,000,000)
      - `fill_color` (Text, Optional)
      - `back_color` (Text, Optional)
      - `box_size` (Number, Optional)
      - `logo_option` (Text, Optional)
      - `owner` (Relation to `users`, Required)
+
+- Set API rules to "everyone" (you can do this by leaving every rule empty).
 
 6. Configure environment variables:
    Create a `.env` file with:
