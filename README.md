@@ -127,6 +127,7 @@ Follow these steps to set up the project locally.
      - `owner` (Relation to `users`, Required)
 
 - Set API rules to "everyone" (you can do this by leaving every rule empty).
+- Set any users you want as "admin" so they can access the dashboard. (Important)
 
 6. Configure environment variables:
    Create a `.env` file with:
